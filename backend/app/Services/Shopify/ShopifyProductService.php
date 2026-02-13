@@ -51,4 +51,70 @@ class ShopifyProductService implements ShopifyProductApiInterface
 
         return $response['count'] ?? 0;
     }
+
+    public function createProduct(array $productData): array
+    {
+        // Formatar dados para o formato esperado pela API do Shopify
+        $shopifyProduct = $this->formatProductForShopify($productData);
+        
+        $response = $this->apiClient->post('/products.json', [
+            'product' => $shopifyProduct,
+        ]);
+
+        return $response['product'] ?? [];
+    }
+
+    public function updateProduct(string $shopifyId, array $productData): array
+    {
+        // Formatar dados para o formato esperado pela API do Shopify
+        $shopifyProduct = $this->formatProductForShopify($productData);
+        
+        $response = $this->apiClient->put("/products/{$shopifyId}.json", [
+            'product' => $shopifyProduct,
+        ]);
+
+        return $response['product'] ?? [];
+    }
+
+    public function deleteProduct(string $shopifyId): bool
+    {
+        try {
+            $this->apiClient->delete("/products/{$shopifyId}.json");
+            return true;
+        } catch (\RuntimeException $e) {
+            if (str_contains($e->getMessage(), '404')) {
+                return false; // Produto já não existe
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Format product data to Shopify API format
+     *
+     * @param array $productData
+     * @return array
+     */
+    private function formatProductForShopify(array $productData): array
+    {
+        $shopifyProduct = [
+            'title' => $productData['title'] ?? '',
+            'body_html' => $productData['description'] ?? '',
+            'vendor' => $productData['vendor'] ?? null,
+            'product_type' => $productData['product_type'] ?? null,
+            'status' => $productData['status'] ?? 'active',
+        ];
+
+        // Adicionar variante com preço
+        if (isset($productData['price'])) {
+            $shopifyProduct['variants'] = [
+                [
+                    'price' => (string) $productData['price'],
+                    'inventory_management' => 'shopify',
+                ],
+            ];
+        }
+
+        return $shopifyProduct;
+    }
 }

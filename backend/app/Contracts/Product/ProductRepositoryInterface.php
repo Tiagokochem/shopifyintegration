@@ -49,4 +49,12 @@ interface ProductRepositoryInterface
      * @return Product|null
      */
     public function findById(int $id): ?Product;
+
+    /**
+     * Delete a product
+     *
+     * @param Product $product
+     * @return bool
+     */
+    public function delete(Product $product): bool;
 }

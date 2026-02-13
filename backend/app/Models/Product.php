@@ -18,15 +18,28 @@ class Product extends Model
         'vendor',
         'product_type',
         'status',
+        'sync_auto',
         'synced_at',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
+        'sync_auto' => 'boolean',
         'synced_at' => 'datetime',
     ];
 
     protected $dates = [
         'synced_at',
     ];
+
+    /**
+     * Get the sync_auto attribute, defaulting to false if null
+     *
+     * @param mixed $value
+     * @return bool
+     */
+    public function getSyncAutoAttribute($value): bool
+    {
+        return (bool) $value;
+    }
 }

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->string('shopify_id')->unique()->index();
+            $table->string('shopify_id')->nullable()->unique()->index();
             $table->string('title');
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2);

@@ -3,13 +3,14 @@ import gql from 'graphql-tag';
 
 export interface Product {
   id: string;
-  shopify_id: string;
+  shopify_id?: string;
   title: string;
   description?: string;
   price: number;
   vendor?: string;
   product_type?: string;
   status: string;
+  sync_auto?: boolean;
   synced_at?: string;
   created_at: string;
   updated_at: string;
@@ -65,6 +66,7 @@ const PRODUCTS_QUERY = gql`
         vendor
         product_type
         status
+        sync_auto
         synced_at
         created_at
         updated_at

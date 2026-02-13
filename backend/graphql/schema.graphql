@@ -11,15 +11,45 @@ type Query {
     product(id: ID! @eq): Product @find
 }
 
+type Mutation {
+    createProduct(
+        title: String!
+        description: String
+        price: Float!
+        vendor: String
+        product_type: String
+        status: String
+        sync_auto: Boolean
+    ): Product @field(resolver: "App\\GraphQL\\Mutations\\CreateProductMutation")
+
+    updateProduct(
+        id: ID!
+        title: String
+        description: String
+        price: Float
+        vendor: String
+        product_type: String
+        status: String
+        sync_auto: Boolean
+    ): Product @field(resolver: "App\\GraphQL\\Mutations\\UpdateProductMutation")
+
+    deleteProduct(id: ID!): Boolean! @field(resolver: "App\\GraphQL\\Mutations\\DeleteProductMutation")
+
+    syncProductToShopify(id: ID!): Product @field(resolver: "App\\GraphQL\\Mutations\\SyncProductToShopifyMutation")
+
+    toggleProductSyncAuto(id: ID!, sync_auto: Boolean!): Product @field(resolver: "App\\GraphQL\\Mutations\\ToggleProductSyncAutoMutation")
+}
+
 type Product {
     id: ID!
-    shopify_id: String!
+    shopify_id: String
     title: String!
     description: String
     price: Float!
     vendor: String
     product_type: String
     status: String!
+    sync_auto: Boolean!
     synced_at: String
     created_at: String!
     updated_at: String!
