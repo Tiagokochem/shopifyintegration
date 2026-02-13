@@ -5,7 +5,6 @@ Projeto técnico demonstrando integração com Shopify usando Laravel 11 + PHP 8
 > **📋 Guias Rápidos:**
 > - **🚀 Instalação automática:** Execute `./setup.sh` (faz tudo automaticamente!)
 > - **✅ Verificar funcionamento:** Execute `./verify.sh` (testa se tudo está OK!)
-> - **🔌 Configuração de portas:** `PORTAS.md`
 > - **📊 Exemplos GraphQL:** `GRAPHQL_EXAMPLES.md`
 
 ## 📋 Visão Geral
@@ -50,6 +49,16 @@ Interfaces específicas e focadas:
 
 #### Dependency Inversion Principle (DIP)
 Services dependem de abstrações (interfaces), não de implementações concretas. Todas as dependências são injetadas via Laravel Service Container.
+
+### Padrões de Design Implementados
+
+O projeto demonstra vários padrões de design além dos princípios SOLID:
+
+- **Strategy Pattern**: Múltiplas estratégias de sincronização (Default, Conservative, Aggressive, Selective)
+- **Factory Pattern**: Factory para criar estratégias baseadas em configuração
+- **Observer Pattern**: Eventos e listeners para desacoplar ações (logs, notificações)
+- **Command Pattern**: Comandos encapsulados para operações de sincronização
+- **Decorator Pattern**: Decorators para adicionar funcionalidades (retry, throttling) sem modificar código
 
 ### Estrutura de Diretórios
 
@@ -254,8 +263,17 @@ docker compose exec node npm install
 ### Comandos Úteis
 
 ```bash
+# 🔧 DIAGNÓSTICO RÁPIDO - Use este primeiro se tiver problemas!
+docker compose exec php php artisan shopify:quick-fix
+
 # Sincronizar produtos do Shopify
 docker compose exec php php artisan shopify:sync-products
+
+# Testar conexão com Shopify
+docker compose exec php php artisan shopify:test-connection
+
+# Diagnosticar token do Shopify
+docker compose exec php php artisan shopify:diagnose-token
 
 # Executar testes backend
 docker compose exec php php artisan test
@@ -269,6 +287,154 @@ docker compose exec php bash
 # Ver logs
 docker compose logs -f php
 ```
+
+## 🔄 Como Testar a Integração com Shopify
+
+### ⚠️ IMPORTANTE: Por que a página está vazia?
+
+A página `http://localhost:3002/products` está vazia porque:
+
+1. **Você ainda não sincronizou produtos do Shopify** - O banco de dados está vazio
+2. **Você precisa ter produtos cadastrados na sua loja Shopify** - A integração busca produtos que já existem no Shopify
+3. **As credenciais do Shopify precisam estar configuradas** - Sem isso, a sincronização não funciona
+
+### Passo 1: Verificar se você tem produtos no Shopify
+
+**Você precisa ter:**
+- Uma loja Shopify ativa (pode ser uma loja de teste)
+- Pelo menos 1 produto cadastrado na loja
+- Um **Admin API access token** configurado
+
+**Como criar uma loja de teste:**
+1. Acesse https://partners.shopify.com
+2. Crie uma conta de desenvolvedor
+3. Crie uma loja de desenvolvimento
+4. Adicione alguns produtos de teste na loja
+
+### Passo 2: Configurar Credenciais do Shopify
+
+**No arquivo `backend/.env`, configure:**
+
+```env
+SHOPIFY_STORE_URL=https://sua-loja.myshopify.com
+SHOPIFY_ACCESS_TOKEN=seu-token-aqui
+SHOPIFY_API_VERSION=2024-10
+```
+
+**Como obter o Access Token:**
+1. Acesse sua loja Shopify como admin
+2. Vá em **Settings > Apps and sales channels > Develop apps**
+3. Crie um novo app ou use um existente
+4. Vá em **API credentials**
+5. Gere um **Admin API access token** com permissões de leitura de produtos
+6. Copie o token e cole no `.env`
+
+**⚠️ IMPORTANTE:** O token precisa ter permissão para ler produtos (`read_products`).
+
+### Passo 3: Verificar se as Credenciais Estão Configuradas
+
+```bash
+# Verificar se as variáveis estão no .env
+docker compose exec php cat .env | grep SHOPIFY
+
+# Deve mostrar algo como:
+# SHOPIFY_STORE_URL=https://sua-loja.myshopify.com
+# SHOPIFY_ACCESS_TOKEN=shpat_xxxxx
+# SHOPIFY_API_VERSION=2024-10
+```
+
+**Se não aparecer nada ou estiver vazio:**
+- Edite o arquivo `backend/.env` manualmente
+- Adicione as 3 variáveis acima
+- Certifique-se de que não há espaços extras ou aspas desnecessárias
+
+### Passo 4: Sincronizar Produtos do Shopify
+
+**Execute o comando de sincronização:**
+
+```bash
+docker compose exec php php artisan shopify:sync-products
+```
+
+**Saída esperada (sucesso):**
+```
+Starting product synchronization...
+Synchronization completed!
++---------+-------+
+| Action  | Count |
++---------+-------+
+| Created |   10  |
+| Updated |    0  |
+| Skipped |    0  |
+| Errors  |    0  |
++---------+-------+
+```
+
+**Se der erro:**
+- Verifique se as credenciais estão corretas
+- Verifique se você tem produtos na loja Shopify
+- Verifique os logs: `docker compose logs php --tail 50`
+- Veja a seção "Troubleshooting" abaixo
+
+### Passo 5: Verificar se os Produtos Foram Sincronizados
+
+**Opção 1: Via banco de dados**
+```bash
+docker compose exec postgres psql -U shopify_user -d shopify_integration -c "SELECT COUNT(*) FROM products;"
+```
+
+**Opção 2: Via GraphQL**
+```bash
+curl -X POST http://localhost:8082/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query":"{ products(first: 10) { paginatorInfo { total } } }"}'
+```
+
+**Opção 3: Via Frontend**
+- Acesse http://localhost:3002/products
+- Você deve ver os produtos listados
+
+### Passo 6: Testar a Página de Produtos
+
+1. **Acesse:** http://localhost:3002/products
+2. **Você deve ver:**
+   - Lista de produtos sincronizados do Shopify
+   - Filtros de busca (search, vendor, product_type)
+   - Paginação (se houver mais de 10 produtos)
+   - Preços, status, e informações de cada produto
+
+**Se ainda estiver vazio:**
+- Verifique se a sincronização foi executada com sucesso (Passo 4)
+- Verifique se há produtos no banco (Passo 5)
+- Verifique o console do navegador (F12) para erros JavaScript
+- Verifique os logs do backend: `docker compose logs php --tail 50`
+
+### Troubleshooting da Integração
+
+**Erro: "Shopify credentials are not configured"**
+- Verifique se o arquivo `backend/.env` existe
+- Verifique se as variáveis `SHOPIFY_STORE_URL` e `SHOPIFY_ACCESS_TOKEN` estão preenchidas
+- Execute: `docker compose exec php php artisan config:clear`
+
+**Erro: "Shopify API request failed: 401 Unauthorized"**
+- O token de acesso está incorreto ou expirado
+- Verifique se o token tem permissão `read_products`
+- Gere um novo token no Shopify
+
+**Erro: "Shopify API request failed: 404 Not Found"**
+- A URL da loja está incorreta
+- Verifique se `SHOPIFY_STORE_URL` está no formato: `https://sua-loja.myshopify.com`
+- Não inclua `/admin` ou `/api` na URL
+
+**Sincronização executou mas "Created: 0"**
+- Você não tem produtos na loja Shopify
+- Adicione produtos na loja primeiro
+- Verifique se os produtos estão com status "active" ou "draft"
+
+**Produtos sincronizados mas não aparecem no frontend**
+- Verifique se o frontend está rodando: `docker compose ps | grep node`
+- Verifique o console do navegador (F12) para erros
+- Verifique se o GraphQL está respondendo: `curl http://localhost:8082/graphql`
 
 ## 🧪 Guia Passo a Passo para Testes
 
@@ -548,7 +714,6 @@ lsof -i :8082 -i :3002 -i :5433 -i :6380
 docker compose ps
 ```
 
-**Veja também:** `PORTAS.md` para documentação completa sobre portas.
 
 ### Erro: "Connection refused" ao acessar API
 

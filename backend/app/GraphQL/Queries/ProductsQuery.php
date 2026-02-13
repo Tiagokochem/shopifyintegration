@@ -31,7 +31,7 @@ class ProductsQuery
         $perPage = $args['first'] ?? 10;
         $page = $args['page'] ?? 1;
 
-        $paginator = $this->productRepository->getAll($filters, $perPage);
+        $paginator = $this->productRepository->getAll($filters, $perPage, $page);
         
         // Se retornar paginator do Laravel, transformar para formato GraphQL
         if (method_exists($paginator, 'items')) {

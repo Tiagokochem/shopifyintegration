@@ -37,9 +37,10 @@ interface ProductRepositoryInterface
      *
      * @param array $filters
      * @param int $perPage
+     * @param int $page
      * @return Collection|\Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
-    public function getAll(array $filters = [], int $perPage = 10);
+    public function getAll(array $filters = [], int $perPage = 10, int $page = 1);
 
     /**
      * Find a product by ID

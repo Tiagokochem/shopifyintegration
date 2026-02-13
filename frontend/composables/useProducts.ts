@@ -1,4 +1,5 @@
 import { useQuery } from '@vue/apollo-composable';
+import gql from 'graphql-tag';
 
 export interface Product {
   id: string;
@@ -40,7 +41,7 @@ export interface ProductsResponse {
   };
 }
 
-const PRODUCTS_QUERY = `
+const PRODUCTS_QUERY = gql`
   query Products(
     $first: Int
     $page: Int

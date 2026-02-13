@@ -3,12 +3,13 @@
 namespace App\Services\Product;
 
 use App\Contracts\Product\ProductSyncStrategyInterface;
+use App\Contracts\Product\ProductTransformerInterface;
 use App\Models\Product;
 
 class DefaultProductSyncStrategy implements ProductSyncStrategyInterface
 {
     public function __construct(
-        private readonly ProductTransformer $transformer
+        private readonly ProductTransformerInterface $transformer
     ) {
     }
 

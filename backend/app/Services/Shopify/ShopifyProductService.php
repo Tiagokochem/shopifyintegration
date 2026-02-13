@@ -20,6 +20,9 @@ class ShopifyProductService implements ShopifyProductApiInterface
             $params['since_id'] = $sinceId;
         }
 
+        // Não usar status=any por padrão - pode causar problemas na API
+        // Primeiro tentar sem status (retorna apenas produtos ativos/publicados)
+        // Se precisar incluir drafts/archived, pode ser feito depois
         $response = $this->apiClient->get('/products.json', $params);
 
         return $response['products'] ?? [];
@@ -42,7 +45,9 @@ class ShopifyProductService implements ShopifyProductApiInterface
 
     public function getProductsCount(): int
     {
-        $response = $this->apiClient->get('/products/count.json');
+        // Não usar status=any - pode causar problemas na API
+        // Buscar contagem sem filtro de status (retorna apenas produtos ativos/publicados)
+        $response = $this->apiClient->get('/products/count.json', []);
 
         return $response['count'] ?? 0;
     }

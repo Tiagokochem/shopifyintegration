@@ -20,9 +20,9 @@ type Product {
     vendor: String
     product_type: String
     status: String!
-    synced_at: DateTime
-    created_at: DateTime!
-    updated_at: DateTime!
+    synced_at: String
+    created_at: String!
+    updated_at: String!
 }
 
 type ProductPaginator {

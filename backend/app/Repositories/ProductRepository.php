@@ -26,7 +26,7 @@ class ProductRepository implements ProductRepositoryInterface
         return $product->fresh();
     }
 
-    public function getAll(array $filters = [], int $perPage = 10)
+    public function getAll(array $filters = [], int $perPage = 10, int $page = 1)
     {
         $query = Product::query();
 
@@ -51,7 +51,7 @@ class ProductRepository implements ProductRepositoryInterface
         }
 
         if ($perPage > 0) {
-            return $query->orderBy('created_at', 'desc')->paginate($perPage);
+            return $query->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
         }
 
         return $query->orderBy('created_at', 'desc')->get();

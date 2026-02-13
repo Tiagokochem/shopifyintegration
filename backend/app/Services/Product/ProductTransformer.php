@@ -2,7 +2,16 @@
 
 namespace App\Services\Product;
 
-class ProductTransformer
+use App\Contracts\Product\ProductTransformerInterface;
+
+/**
+ * Product Transformer
+ * 
+ * Transforms Shopify product data to our internal format.
+ * 
+ * Demonstrates: Single Responsibility Principle, Dependency Inversion Principle
+ */
+class ProductTransformer implements ProductTransformerInterface
 {
     /**
      * Transform Shopify product data to our internal format

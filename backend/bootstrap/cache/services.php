@@ -43,6 +43,7 @@
     39 => 'Nuwave\\Lighthouse\\Validation\\ValidationServiceProvider',
     40 => 'Pest\\Laravel\\PestServiceProvider',
     41 => 'App\\Providers\\AppServiceProvider',
+    42 => 'App\\Providers\\EventServiceProvider',
   ),
   'eager' => 
   array (
@@ -73,6 +74,7 @@
     24 => 'Nuwave\\Lighthouse\\Validation\\ValidationServiceProvider',
     25 => 'Pest\\Laravel\\PestServiceProvider',
     26 => 'App\\Providers\\AppServiceProvider',
+    27 => 'App\\Providers\\EventServiceProvider',
   ),
   'deferred' => 
   array (
