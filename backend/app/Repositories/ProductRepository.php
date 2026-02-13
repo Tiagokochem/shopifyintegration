@@ -1,0 +1,64 @@
+<?php
+
+namespace App\Repositories;
+
+use App\Contracts\Product\ProductRepositoryInterface;
+use App\Models\Product;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+
+class ProductRepository implements ProductRepositoryInterface
+{
+    public function findByShopifyId(string $shopifyId): ?Product
+    {
+        return Product::where('shopify_id', $shopifyId)->first();
+    }
+
+    public function create(array $data): Product
+    {
+        return Product::create($data);
+    }
+
+    public function update(Product $product, array $data): Product
+    {
+        $product->update($data);
+
+        return $product->fresh();
+    }
+
+    public function getAll(array $filters = [], int $perPage = 10)
+    {
+        $query = Product::query();
+
+        if (isset($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        if (isset($filters['vendor'])) {
+            $query->where('vendor', $filters['vendor']);
+        }
+
+        if (isset($filters['product_type'])) {
+            $query->where('product_type', $filters['product_type']);
+        }
+
+        if (isset($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if ($perPage > 0) {
+            return $query->orderBy('created_at', 'desc')->paginate($perPage);
+        }
+
+        return $query->orderBy('created_at', 'desc')->get();
+    }
+
+    public function findById(int $id): ?Product
+    {
+        return Product::find($id);
+    }
+}

@@ -1,0 +1,42 @@
+type Query {
+    products(
+        first: Int = 10
+        page: Int = 1
+        search: String
+        vendor: String
+        product_type: String
+    ): ProductPaginator
+        @field(resolver: "App\\GraphQL\\Queries\\ProductsQuery")
+
+    product(id: ID! @eq): Product @find
+}
+
+type Product {
+    id: ID!
+    shopify_id: String!
+    title: String!
+    description: String
+    price: Float!
+    vendor: String
+    product_type: String
+    status: String!
+    synced_at: DateTime
+    created_at: DateTime!
+    updated_at: DateTime!
+}
+
+type ProductPaginator {
+    data: [Product!]!
+    paginatorInfo: PaginatorInfo!
+}
+
+type PaginatorInfo {
+    count: Int!
+    currentPage: Int!
+    firstItem: Int
+    hasMorePages: Boolean!
+    lastItem: Int
+    lastPage: Int!
+    perPage: Int!
+    total: Int!
+}

@@ -1,0 +1,27 @@
+{
+  "name": "shopify-integration-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@apollo/client": "^3.11.0",
+    "@vue/apollo-composable": "^4.0.0",
+    "nuxt": "^3.13.0",
+    "vue": "^3.5.0",
+    "vue-router": "^4.4.0",
+    "graphql": "^16.8.0"
+  },
+  "devDependencies": {
+    "@nuxtjs/tailwindcss": "^6.12.0",
+    "@playwright/test": "^1.48.0",
+    "typescript": "^5.6.0"
+  }
+}
