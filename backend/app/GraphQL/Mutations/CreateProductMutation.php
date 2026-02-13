@@ -4,8 +4,10 @@ namespace App\GraphQL\Mutations;
 
 use App\Contracts\Product\ProductRepositoryInterface;
 use App\Events\ProductCreated;
+use App\Exceptions\InvalidProductDataException;
 use App\Models\Product;
 use App\Services\Product\ProductShopifySyncService;
+use App\Services\Product\ProductValidator;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 
 /**
@@ -20,7 +22,8 @@ class CreateProductMutation
 {
     public function __construct(
         private readonly ProductRepositoryInterface $productRepository,
-        private readonly ProductShopifySyncService $shopifySyncService
+        private readonly ProductShopifySyncService $shopifySyncService,
+        private readonly ProductValidator $validator
     ) {
     }
 
@@ -29,13 +32,16 @@ class CreateProductMutation
         $data = [
             'title' => $args['title'],
             'description' => $args['description'] ?? null,
-            'price' => $args['price'],
+            'price' => (float) $args['price'],
             'vendor' => $args['vendor'] ?? null,
             'product_type' => $args['product_type'] ?? null,
             'status' => $args['status'] ?? 'active',
             'sync_auto' => $args['sync_auto'] ?? false,
             'shopify_id' => null, // Will be set if synced to Shopify
         ];
+
+        // Validate data before creating
+        $this->validator->validateCreate($data);
 
         $product = $this->productRepository->create($data);
 

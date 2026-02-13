@@ -4,8 +4,11 @@ namespace App\GraphQL\Mutations;
 
 use App\Contracts\Product\ProductRepositoryInterface;
 use App\Events\ProductUpdated;
+use App\Exceptions\InvalidProductDataException;
+use App\Exceptions\ProductNotFoundException;
 use App\Models\Product;
 use App\Services\Product\ProductShopifySyncService;
+use App\Services\Product\ProductValidator;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 
 /**
@@ -20,16 +23,17 @@ class UpdateProductMutation
 {
     public function __construct(
         private readonly ProductRepositoryInterface $productRepository,
-        private readonly ProductShopifySyncService $shopifySyncService
+        private readonly ProductShopifySyncService $shopifySyncService,
+        private readonly ProductValidator $validator
     ) {
     }
 
     public function __invoke($rootValue, array $args, GraphQLContext $context): Product
     {
-        $product = $this->productRepository->findById($args['id']);
+        $product = $this->productRepository->findByIdOrFail($args['id']);
 
         if (!$product) {
-            throw new \RuntimeException("Product with ID {$args['id']} not found");
+            throw new ProductNotFoundException($args['id']);
         }
 
         $data = [];
@@ -41,7 +45,7 @@ class UpdateProductMutation
             $data['description'] = $args['description'];
         }
         if (isset($args['price'])) {
-            $data['price'] = $args['price'];
+            $data['price'] = (float) $args['price'];
         }
         if (isset($args['vendor'])) {
             $data['vendor'] = $args['vendor'];
@@ -53,7 +57,12 @@ class UpdateProductMutation
             $data['status'] = $args['status'];
         }
         if (isset($args['sync_auto'])) {
-            $data['sync_auto'] = $args['sync_auto'];
+            $data['sync_auto'] = (bool) $args['sync_auto'];
+        }
+
+        // Validate data before updating
+        if (!empty($data)) {
+            $this->validator->validateUpdate($data);
         }
 
         $product = $this->productRepository->update($product, $data);

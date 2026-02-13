@@ -4,6 +4,7 @@ namespace App\GraphQL\Mutations;
 
 use App\Contracts\Product\ProductRepositoryInterface;
 use App\Events\ProductDeleted;
+use App\Exceptions\ProductNotFoundException;
 use App\Models\Product;
 use App\Services\Product\ProductShopifySyncService;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
@@ -26,10 +27,10 @@ class DeleteProductMutation
 
     public function __invoke($rootValue, array $args, GraphQLContext $context): bool
     {
-        $product = $this->productRepository->findById($args['id']);
+        $product = $this->productRepository->findByIdOrFail($args['id']);
 
         if (!$product) {
-            throw new \RuntimeException("Product with ID {$args['id']} not found");
+            throw new ProductNotFoundException($args['id']);
         }
 
         // Delete from Shopify if sync_auto is enabled

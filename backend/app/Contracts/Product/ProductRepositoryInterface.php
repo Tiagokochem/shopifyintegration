@@ -51,6 +51,14 @@ interface ProductRepositoryInterface
     public function findById(int $id): ?Product;
 
     /**
+     * Find a product by ID (accepts string or int for GraphQL compatibility)
+     *
+     * @param string|int $id
+     * @return Product|null
+     */
+    public function findByIdOrFail(string|int $id): ?Product;
+
+    /**
      * Delete a product
      *
      * @param Product $product
