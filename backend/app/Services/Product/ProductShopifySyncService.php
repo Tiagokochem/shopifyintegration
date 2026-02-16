@@ -35,6 +35,71 @@ class ProductShopifySyncService
     public function syncToShopify(Product $product): Product
     {
         try {
+            // If updating and price is missing/invalid, fetch current product from Shopify
+            // to preserve existing price and description
+            if ($product->shopify_id) {
+                $currentShopifyProduct = $this->shopifyProductApi->getProduct($product->shopify_id);
+                
+                // If local price is 0 or null, use Shopify's current price
+                if (($product->price === null || (float) $product->price <= 0) && $currentShopifyProduct) {
+                    $variants = $currentShopifyProduct['variants'] ?? [];
+                    $firstVariant = $variants[0] ?? [];
+                    if (isset($firstVariant['price'])) {
+                        $product->price = (float) $firstVariant['price'];
+                        Log::info('Using Shopify current price for product', [
+                            'product_id' => $product->id,
+                            'price' => $product->price,
+                        ]);
+                    }
+                }
+                
+                // If local description is empty, use Shopify's current description
+                if (empty(trim($product->description ?? '')) && $currentShopifyProduct) {
+                    $currentDescription = $currentShopifyProduct['body_html'] ?? '';
+                    if (!empty(trim($currentDescription))) {
+                        $product->description = $currentDescription;
+                        Log::info('Using Shopify current description for product', [
+                            'product_id' => $product->id,
+                        ]);
+                    }
+                }
+            }
+            
+            // Ensure product is fresh and get price value
+            $product->refresh();
+            
+            // Get price value - handle decimal cast properly
+            $price = $product->price;
+            if ($price !== null) {
+                $price = is_string($price) ? (float) $price : (float) $price;
+            }
+            
+            // Validate price - if invalid, try to get from Shopify
+            if ($price === null || $price <= 0) {
+                if ($product->shopify_id && isset($currentShopifyProduct)) {
+                    $variants = $currentShopifyProduct['variants'] ?? [];
+                    $firstVariant = $variants[0] ?? [];
+                    if (isset($firstVariant['price'])) {
+                        $price = (float) $firstVariant['price'];
+                        // Update local product with Shopify price
+                        $this->productRepository->update($product, ['price' => $price]);
+                        $product->refresh();
+                        Log::info('Updated product price from Shopify', [
+                            'product_id' => $product->id,
+                            'price' => $price,
+                        ]);
+                    }
+                }
+                
+                // Final validation
+                if ($price === null || $price <= 0) {
+                    throw new \InvalidArgumentException(
+                        'Product price is required and must be greater than 0 when syncing to Shopify. ' .
+                        'Product ID: ' . $product->id . ', Current price: ' . ($product->price ?? 'null')
+                    );
+                }
+            }
+
             $productData = $this->formatter->format($product);
 
             if ($product->shopify_id) {

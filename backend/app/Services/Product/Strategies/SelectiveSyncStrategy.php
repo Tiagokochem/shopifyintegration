@@ -81,21 +81,52 @@ class SelectiveSyncStrategy implements ProductSyncStrategyInterface
 
     public function shouldUpdate(Product $existingProduct, array $shopifyProduct): bool
     {
-        // Apply same business rules for updates
-        if (!$this->shouldCreate($shopifyProduct)) {
-            return false;
+        // For updates, we should always update if the product exists
+        // The vendor filter should still apply, but price minimum should not block updates
+        // (products might have price changes or temporary price drops)
+        
+        // Business rule: Filter by vendor if configured (same as create)
+        if (!empty($this->allowedVendors)) {
+            $validAllowedVendors = array_filter($this->allowedVendors, function($v) {
+                return !empty(trim($v));
+            });
+            
+            if (!empty($validAllowedVendors)) {
+                $vendor = trim($shopifyProduct['vendor'] ?? '');
+                if (empty($vendor) || !in_array($vendor, $validAllowedVendors)) {
+                    \Illuminate\Support\Facades\Log::debug('SelectiveSyncStrategy: Product update skipped - vendor not allowed', [
+                        'vendor' => $vendor,
+                        'allowed_vendors' => $validAllowedVendors,
+                        'product_title' => $shopifyProduct['title'] ?? 'unknown',
+                    ]);
+                    return false;
+                }
+            }
         }
-
-        // Update if data changed or not synced recently
+        
+        // Always update if not synced recently (force refresh)
         if (!$existingProduct->synced_at || $existingProduct->synced_at->lt(now()->subHours(1))) {
             return true;
         }
 
+        // Check if data has changed
         $transformedData = $this->transformer->transform($shopifyProduct);
 
-        return $existingProduct->title !== $transformedData['title']
+        $hasChanges = $existingProduct->title !== $transformedData['title']
             || abs($existingProduct->price - $transformedData['price']) > 0.01
-            || $existingProduct->status !== $transformedData['status'];
+            || $existingProduct->status !== $transformedData['status']
+            || $existingProduct->description !== ($transformedData['description'] ?? null)
+            || $existingProduct->vendor !== ($transformedData['vendor'] ?? null)
+            || $existingProduct->product_type !== ($transformedData['product_type'] ?? null);
+
+        if ($hasChanges) {
+            \Illuminate\Support\Facades\Log::debug('SelectiveSyncStrategy: Product should be updated - data changed', [
+                'product_id' => $existingProduct->id,
+                'product_title' => $shopifyProduct['title'] ?? 'unknown',
+            ]);
+        }
+
+        return $hasChanges;
     }
 
     public function transformProductData(array $shopifyProduct): array

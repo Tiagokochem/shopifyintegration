@@ -61,7 +61,15 @@ class ShopifyProductService implements ShopifyProductApiInterface
 
     public function updateProduct(string $shopifyId, array $productData): array
     {
-        $shopifyProduct = $this->formatter->format($productData);
+        // Check if productData is already formatted (has 'variants' key)
+        // If it's already formatted, use it directly; otherwise format it
+        if (isset($productData['variants']) && is_array($productData['variants'])) {
+            // Already formatted, use directly
+            $shopifyProduct = $productData;
+        } else {
+            // Not formatted yet, format it
+            $shopifyProduct = $this->formatter->format($productData);
+        }
         
         $response = $this->apiClient->put("/products/{$shopifyId}.json", [
             'product' => $shopifyProduct,
