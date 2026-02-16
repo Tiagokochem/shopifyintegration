@@ -69,11 +69,21 @@ class UpdateProductMutation
         if (isset($args['sku'])) {
             $data['sku'] = $args['sku'];
         }
+        // Handle weight and weight_unit together - they must be consistent
         if (isset($args['weight'])) {
             $data['weight'] = (float) $args['weight'];
-        }
-        if (isset($args['weight_unit'])) {
-            $data['weight_unit'] = $args['weight_unit'];
+            // If weight is set, ensure weight_unit is also set and valid
+            if (isset($args['weight_unit'])) {
+                $data['weight_unit'] = $this->validateWeightUnit($args['weight_unit']);
+            } elseif ($data['weight'] > 0) {
+                // If weight is > 0 but weight_unit not provided, default to 'kg'
+                $data['weight_unit'] = 'kg';
+            }
+        } elseif (isset($args['weight_unit'])) {
+            // If weight_unit is set but weight is not, only set weight_unit if weight exists in product
+            if ($product->weight !== null && $product->weight > 0) {
+                $data['weight_unit'] = $this->validateWeightUnit($args['weight_unit']);
+            }
         }
         if (isset($args['requires_shipping'])) {
             $data['requires_shipping'] = (bool) $args['requires_shipping'];
@@ -124,5 +134,20 @@ class UpdateProductMutation
         event(new ProductUpdated($product));
 
         return $product->fresh();
+    }
+
+    /**
+     * Validate and normalize weight_unit
+     *
+     * @param string|null $weightUnit
+     * @return string
+     */
+    private function validateWeightUnit(?string $weightUnit): string
+    {
+        $validUnits = ['kg', 'g', 'lb', 'oz'];
+        if (empty($weightUnit) || !in_array($weightUnit, $validUnits)) {
+            return 'kg'; // Default to kg if invalid
+        }
+        return $weightUnit;
     }
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Contracts\Product\ProductRepositoryInterface;
 use App\Contracts\Product\ProductSyncStrategyInterface;
 use App\Contracts\Shopify\ShopifyProductApiInterface;
 use App\Models\Product;
@@ -47,15 +48,13 @@ test('it can sync products from shopify', function () {
             return $transformer->transform($product);
         });
 
-    $syncService = app(ProductSyncService::class);
-    $reflection = new ReflectionClass($syncService);
-    $property = $reflection->getProperty('shopifyProductApi');
-    $property->setAccessible(true);
-    $property->setValue($syncService, $shopifyApi);
+    $repository = new \App\Repositories\ProductRepository();
 
-    $strategyProperty = $reflection->getProperty('syncStrategy');
-    $strategyProperty->setAccessible(true);
-    $strategyProperty->setValue($syncService, $strategy);
+    $syncService = new ProductSyncService(
+        $shopifyApi,
+        $repository,
+        $strategy
+    );
 
     $stats = $syncService->syncProducts(250);
 
@@ -100,15 +99,13 @@ test('it updates existing products during sync', function () {
             return $transformer->transform($product);
         });
 
-    $syncService = app(ProductSyncService::class);
-    $reflection = new ReflectionClass($syncService);
-    $property = $reflection->getProperty('shopifyProductApi');
-    $property->setAccessible(true);
-    $property->setValue($syncService, $shopifyApi);
+    $repository = new \App\Repositories\ProductRepository();
 
-    $strategyProperty = $reflection->getProperty('syncStrategy');
-    $strategyProperty->setAccessible(true);
-    $strategyProperty->setValue($syncService, $strategy);
+    $syncService = new ProductSyncService(
+        $shopifyApi,
+        $repository,
+        $strategy
+    );
 
     $stats = $syncService->syncProducts(250);
 

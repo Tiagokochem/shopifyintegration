@@ -41,8 +41,11 @@ class CreateProductMutation
             'tags' => $args['tags'] ?? null,
             'status' => $args['status'] ?? 'active',
             'sku' => $args['sku'] ?? null,
-            'weight' => isset($args['weight']) ? (float) $args['weight'] : null,
-            'weight_unit' => $args['weight_unit'] ?? 'kg',
+            'weight' => isset($args['weight']) && $args['weight'] !== null ? (float) $args['weight'] : null,
+            // Only set weight_unit if weight is present, and validate it
+            'weight_unit' => isset($args['weight']) && $args['weight'] !== null 
+                ? ($this->validateWeightUnit($args['weight_unit'] ?? 'kg'))
+                : null,
             'requires_shipping' => $args['requires_shipping'] ?? true,
             'tracked' => $args['tracked'] ?? false,
             'inventory_quantity' => isset($args['inventory_quantity']) ? (int) $args['inventory_quantity'] : null,
@@ -76,5 +79,20 @@ class CreateProductMutation
         event(new ProductCreated($product));
 
         return $product->fresh();
+    }
+
+    /**
+     * Validate and normalize weight_unit
+     *
+     * @param string|null $weightUnit
+     * @return string
+     */
+    private function validateWeightUnit(?string $weightUnit): string
+    {
+        $validUnits = ['kg', 'g', 'lb', 'oz'];
+        if (empty($weightUnit) || !in_array($weightUnit, $validUnits)) {
+            return 'kg'; // Default to kg if invalid
+        }
+        return $weightUnit;
     }
 }

@@ -75,40 +75,57 @@ class ShopifyProductFormatter
         }
 
         // Build variant with all pricing and inventory fields
+        // Shopify requires at least one variant with a price
         $variant = [];
         
-        if (isset($productData['price'])) {
+        // Price is required for variants
+        if (isset($productData['price']) && $productData['price'] !== null) {
             $variant['price'] = (string) $productData['price'];
+        } else {
+            // Shopify requires at least a price, default to 0 if not provided
+            $variant['price'] = '0.00';
         }
         
-        if (isset($productData['compare_at_price'])) {
+        if (isset($productData['compare_at_price']) && $productData['compare_at_price'] !== null) {
             $variant['compare_at_price'] = (string) $productData['compare_at_price'];
         }
         
-        if (isset($productData['sku'])) {
+        if (isset($productData['sku']) && $productData['sku'] !== null && $productData['sku'] !== '') {
             $variant['sku'] = $productData['sku'];
         }
         
-        if (isset($productData['weight'])) {
+        // Weight and weight_unit must be sent together, or not at all
+        // Shopify requires weight_unit to be a valid value if weight is present
+        if (isset($productData['weight']) && $productData['weight'] !== null && $productData['weight'] > 0) {
             $variant['weight'] = (string) $productData['weight'];
-            $variant['weight_unit'] = $productData['weight_unit'] ?? 'kg';
+            
+            // Get weight_unit, default to 'kg' if not provided or null
+            $weightUnit = $productData['weight_unit'] ?? 'kg';
+            
+            // Validate weight_unit - Shopify accepts: kg, g, lb, oz
+            $validUnits = ['kg', 'g', 'lb', 'oz'];
+            if (empty($weightUnit) || !in_array($weightUnit, $validUnits)) {
+                $weightUnit = 'kg'; // Default to kg if invalid or null
+            }
+            
+            // Only include weight_unit if it's valid (never null)
+            $variant['weight_unit'] = $weightUnit;
         }
         
         if (isset($productData['requires_shipping'])) {
-            $variant['requires_shipping'] = $productData['requires_shipping'];
+            $variant['requires_shipping'] = (bool) $productData['requires_shipping'];
         }
         
         if (isset($productData['tracked'])) {
             $variant['inventory_management'] = $productData['tracked'] ? 'shopify' : null;
         }
         
-        if (isset($productData['inventory_quantity'])) {
+        if (isset($productData['inventory_quantity']) && $productData['inventory_quantity'] !== null) {
             $variant['inventory_quantity'] = (int) $productData['inventory_quantity'];
         }
 
-        if (!empty($variant)) {
-            $shopifyProduct['variants'] = [$variant];
-        }
+        // Always include variants array (Shopify requires at least one variant)
+        $shopifyProduct['variants'] = [$variant];
 
         return $shopifyProduct;
     }
@@ -121,7 +138,7 @@ class ShopifyProductFormatter
      */
     private function productToArray(Product $product): array
     {
-        return [
+        $data = [
             'title' => $product->title,
             'description' => $product->description,
             'price' => $product->price,
@@ -132,8 +149,6 @@ class ShopifyProductFormatter
             'status' => $product->status,
             'handle' => $product->handle,
             'sku' => $product->sku,
-            'weight' => $product->weight,
-            'weight_unit' => $product->weight_unit,
             'requires_shipping' => $product->requires_shipping,
             'tracked' => $product->tracked,
             'inventory_quantity' => $product->inventory_quantity,
@@ -144,6 +159,16 @@ class ShopifyProductFormatter
             'template_suffix' => $product->template_suffix,
             'published' => $product->published,
         ];
+        
+        // Only include weight and weight_unit if weight is present and > 0
+        // This prevents sending weight_unit as null to Shopify
+        if ($product->weight !== null && $product->weight > 0) {
+            $data['weight'] = $product->weight;
+            // Ensure weight_unit is never null - default to 'kg' if null
+            $data['weight_unit'] = $product->weight_unit ?? 'kg';
+        }
+        
+        return $data;
     }
 
     /**

@@ -7,6 +7,8 @@ use App\Models\Product;
 use App\Services\Product\ProductSyncService;
 use App\Services\Product\ProductTransformer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 
 uses(RefreshDatabase::class);
 
@@ -14,17 +16,18 @@ beforeEach(function () {
     $this->shopifyApi = Mockery::mock(ShopifyProductApiInterface::class);
     $this->repository = Mockery::mock(ProductRepositoryInterface::class);
     $this->strategy = Mockery::mock(ProductSyncStrategyInterface::class);
-    $this->transformer = new ProductTransformer();
 
     $this->syncService = new ProductSyncService(
         $this->shopifyApi,
         $this->repository,
-        $this->strategy,
-        $this->transformer
+        $this->strategy
     );
 });
 
 test('it syncs products successfully', function () {
+    Event::fake();
+    Log::shouldReceive('error')->zeroOrMoreTimes();
+
     $shopifyProducts = [
         [
             'id' => '123',
@@ -87,6 +90,9 @@ test('it syncs products successfully', function () {
 });
 
 test('it updates existing products', function () {
+    Event::fake();
+    Log::shouldReceive('error')->zeroOrMoreTimes();
+
     $shopifyProducts = [
         [
             'id' => '123',
@@ -99,10 +105,10 @@ test('it updates existing products', function () {
         ],
     ];
 
-    $existingProduct = Product::factory()->make([
-        'shopify_id' => '123',
-        'title' => 'Old Title',
-    ]);
+    $existingProduct = new Product();
+    $existingProduct->id = 1;
+    $existingProduct->shopify_id = '123';
+    $existingProduct->title = 'Old Title';
 
     $this->shopifyApi
         ->shouldReceive('getProducts')
@@ -149,6 +155,9 @@ test('it updates existing products', function () {
 });
 
 test('it handles errors gracefully', function () {
+    Event::fake();
+    Log::shouldReceive('error')->zeroOrMoreTimes();
+
     $this->shopifyApi
         ->shouldReceive('getProducts')
         ->once()
