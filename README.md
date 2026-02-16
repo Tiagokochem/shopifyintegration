@@ -1,5 +1,8 @@
 # Shopify Integration Project
 
+<img width="1911" height="1035" alt="image" src="https://github.com/user-attachments/assets/f173995c-f3f6-467c-a890-69065f02c7fc" />
+
+
 Technical demonstration project showcasing Shopify integration using Laravel 11 + PHP 8.2, Laravel Lighthouse (GraphQL), Nuxt.js 3, Docker, with focus on SOLID principles, clean architecture, and code quality.
 
 > **Quick Guides:**
