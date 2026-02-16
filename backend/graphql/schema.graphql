@@ -63,6 +63,8 @@ type Mutation {
 
     syncProductToShopify(id: ID!): Product @field(resolver: "App\\GraphQL\\Mutations\\SyncProductToShopifyMutation")
 
+    syncProductsFromShopify(limit: Int): SyncProductsResult! @field(resolver: "App\\GraphQL\\Mutations\\SyncProductsFromShopifyMutation")
+
     toggleProductSyncAuto(id: ID!, sync_auto: Boolean!): Product @field(resolver: "App\\GraphQL\\Mutations\\ToggleProductSyncAutoMutation")
 }
 
@@ -110,4 +112,17 @@ type PaginatorInfo {
     lastPage: Int!
     perPage: Int!
     total: Int!
+}
+
+type SyncProductsResult {
+    success: Boolean!
+    message: String!
+    stats: SyncStats!
+}
+
+type SyncStats {
+    created: Int!
+    updated: Int!
+    skipped: Int!
+    errors: Int!
 }

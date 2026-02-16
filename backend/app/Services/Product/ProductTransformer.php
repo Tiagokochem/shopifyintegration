@@ -26,20 +26,47 @@ class ProductTransformer implements ProductTransformerInterface
         $images = $shopifyProduct['images'] ?? [];
         $firstImage = $images[0] ?? null;
 
+        $price = $this->extractPrice($variants);
+        
+        // Ensure price is always positive (required field in database)
+        if ($price <= 0) {
+            $price = 0.01;
+        }
+
+        // Ensure title is not empty (required field)
+        $title = $shopifyProduct['title'] ?? 'Untitled Product';
+        if (empty(trim($title))) {
+            $title = 'Untitled Product';
+        }
+
+        // Handle weight and weight_unit
+        // If weight is present and > 0, use it with weight_unit
+        // If weight is null or 0, set weight_unit to 'kg' (default) to satisfy NOT NULL constraint
+        $weight = isset($firstVariant['weight']) && $firstVariant['weight'] > 0 
+            ? (float) $firstVariant['weight'] 
+            : null;
+        
+        // Always set weight_unit to a valid value (default 'kg') to satisfy NOT NULL constraint
+        // If weight is present, use the weight_unit from variant or default to 'kg'
+        // If weight is null, still set weight_unit to 'kg' (default)
+        $weightUnit = $weight !== null 
+            ? ($firstVariant['weight_unit'] ?? 'kg') 
+            : 'kg';
+
         return [
             'shopify_id' => (string) $shopifyProduct['id'],
             'handle' => $shopifyProduct['handle'] ?? null,
-            'title' => $shopifyProduct['title'] ?? '',
+            'title' => $title,
             'description' => $shopifyProduct['body_html'] ?? null,
-            'price' => $this->extractPrice($variants),
+            'price' => $price,
             'compare_at_price' => $this->extractCompareAtPrice($variants),
             'vendor' => $shopifyProduct['vendor'] ?? null,
             'product_type' => $shopifyProduct['product_type'] ?? null,
             'tags' => $this->extractTags($shopifyProduct),
             'status' => $shopifyProduct['status'] ?? 'active',
             'sku' => $firstVariant['sku'] ?? null,
-            'weight' => isset($firstVariant['weight']) ? (float) $firstVariant['weight'] : null,
-            'weight_unit' => $firstVariant['weight_unit'] ?? 'kg',
+            'weight' => $weight,
+            'weight_unit' => $weightUnit,
             'requires_shipping' => $firstVariant['requires_shipping'] ?? true,
             'tracked' => isset($firstVariant['inventory_management']) && $firstVariant['inventory_management'] !== null,
             'inventory_quantity' => isset($firstVariant['inventory_quantity']) ? (int) $firstVariant['inventory_quantity'] : null,
@@ -51,6 +78,7 @@ class ProductTransformer implements ProductTransformerInterface
             'published' => $shopifyProduct['published_at'] !== null,
             'published_at' => isset($shopifyProduct['published_at']) ? $shopifyProduct['published_at'] : null,
             'variants_data' => $this->extractVariantsData($variants),
+            'sync_auto' => false, // Default to false for products synced from Shopify
             'synced_at' => now(),
         ];
     }
@@ -64,12 +92,17 @@ class ProductTransformer implements ProductTransformerInterface
     private function extractPrice(array $variants): float
     {
         if (empty($variants)) {
-            return 0.0;
+            return 0.01; // Minimum price to avoid validation errors
         }
 
-        $prices = array_map(function ($variant) {
-            return (float) ($variant['price'] ?? 0);
-        }, $variants);
+        $prices = array_filter(array_map(function ($variant) {
+            $price = (float) ($variant['price'] ?? 0);
+            return $price > 0 ? $price : null;
+        }, $variants));
+
+        if (empty($prices)) {
+            return 0.01; // Minimum price to avoid validation errors
+        }
 
         return min($prices);
     }

@@ -21,17 +21,10 @@ class DefaultProductSyncStrategy implements ProductSyncStrategyInterface
 
     public function shouldUpdate(Product $existingProduct, array $shopifyProduct): bool
     {
-        // Update if synced_at is null or older than 1 hour
-        if (!$existingProduct->synced_at) {
-            return true;
-        }
-
-        // Update if product data has changed (simple comparison)
-        $transformedData = $this->transformer->transform($shopifyProduct);
-
-        return $existingProduct->title !== $transformedData['title']
-            || $existingProduct->price != $transformedData['price']
-            || $existingProduct->status !== $transformedData['status'];
+        // Always update to ensure data is in sync
+        // This ensures that even if data appears the same, we refresh synced_at timestamp
+        // and handle any edge cases where data might have changed in Shopify
+        return true;
     }
 
     public function transformProductData(array $shopifyProduct): array

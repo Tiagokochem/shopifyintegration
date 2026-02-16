@@ -27,26 +27,55 @@ class SelectiveSyncStrategy implements ProductSyncStrategyInterface
 
     public function shouldCreate(array $shopifyProduct): bool
     {
-        // Business rule: Only sync active products
-        if (($shopifyProduct['status'] ?? '') !== 'active') {
-            return false;
-        }
-
-        // Business rule: Only sync products with valid price
-        $variants = $shopifyProduct['variants'] ?? [];
-        $price = $this->extractMinPrice($variants);
-        if ($price < $this->minPrice) {
-            return false;
-        }
-
+        \Illuminate\Support\Facades\Log::debug('SelectiveSyncStrategy: Checking if product should be created', [
+            'product_title' => $shopifyProduct['title'] ?? 'unknown',
+            'product_vendor' => $shopifyProduct['vendor'] ?? 'none',
+            'allowed_vendors' => $this->allowedVendors,
+            'min_price' => $this->minPrice,
+        ]);
+        
         // Business rule: Filter by vendor if configured
-        if (!empty($this->allowedVendors)) {
-            $vendor = $shopifyProduct['vendor'] ?? '';
-            if (!in_array($vendor, $this->allowedVendors)) {
+        // Only filter if there are actually vendors in the allowed list
+        // If allowedVendors is empty or contains only empty strings, allow all vendors
+        $validAllowedVendors = array_filter($this->allowedVendors, function($v) {
+            return !empty(trim($v));
+        });
+        
+        if (!empty($validAllowedVendors)) {
+            $vendor = trim($shopifyProduct['vendor'] ?? '');
+            if (empty($vendor) || !in_array($vendor, $validAllowedVendors)) {
+                \Illuminate\Support\Facades\Log::warning('SelectiveSyncStrategy: Product skipped - vendor not allowed', [
+                    'vendor' => $vendor,
+                    'allowed_vendors' => $validAllowedVendors,
+                    'product_title' => $shopifyProduct['title'] ?? 'unknown',
+                ]);
+                return false;
+            }
+        }
+        
+        // Business rule: Only sync products with valid price (min_price check)
+        // Only apply min_price check if it's explicitly configured (> 0)
+        // If min_price is 0 (default), allow all products regardless of price
+        if ($this->minPrice > 0) {
+            $variants = $shopifyProduct['variants'] ?? [];
+            $price = $this->extractMinPrice($variants);
+            if ($price < $this->minPrice) {
+                \Illuminate\Support\Facades\Log::warning('SelectiveSyncStrategy: Product skipped - price below minimum', [
+                    'price' => $price,
+                    'min_price' => $this->minPrice,
+                    'product_title' => $shopifyProduct['title'] ?? 'unknown',
+                ]);
                 return false;
             }
         }
 
+        // Allow all statuses (active, draft, archived) to be synced
+        // This ensures products are always synced regardless of status
+        \Illuminate\Support\Facades\Log::info('SelectiveSyncStrategy: Product should be created', [
+            'min_price' => $this->minPrice,
+            'allowed_vendors' => $this->allowedVendors,
+            'product_title' => $shopifyProduct['title'] ?? 'unknown',
+        ]);
         return true;
     }
 

@@ -12,7 +12,7 @@ return [
     // Options for selective strategy
     'sync_strategy_options' => [
         'allowed_vendors' => env('SHOPIFY_ALLOWED_VENDORS') 
-            ? explode(',', env('SHOPIFY_ALLOWED_VENDORS')) 
+            ? array_filter(array_map('trim', explode(',', env('SHOPIFY_ALLOWED_VENDORS'))))
             : [],
         'min_price' => (float) env('SHOPIFY_MIN_PRICE', 0.0),
     ],

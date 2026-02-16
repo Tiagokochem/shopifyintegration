@@ -78,31 +78,122 @@ class ProductSyncService
         $shopifyId = (string) ($shopifyProduct['id'] ?? '');
 
         if (empty($shopifyId)) {
+            Log::warning('Product skipped: empty shopify_id', ['product' => $shopifyProduct]);
             return 'skipped';
         }
 
         $existingProduct = $this->productRepository->findByShopifyId($shopifyId);
+        
+        // Log for debugging
+        Log::debug('Syncing product', [
+            'shopify_id' => $shopifyId,
+            'exists_in_db' => $existingProduct !== null,
+            'strategy' => get_class($this->syncStrategy),
+            'product_title' => $shopifyProduct['title'] ?? 'unknown',
+            'product_status' => $shopifyProduct['status'] ?? 'unknown',
+        ]);
 
-        if (!$existingProduct && $this->syncStrategy->shouldCreate($shopifyProduct)) {
-            $data = $this->syncStrategy->transformProductData($shopifyProduct);
-            $product = $this->productRepository->create($data);
+        // If product doesn't exist, create it
+        if (!$existingProduct) {
+            $shouldCreate = $this->syncStrategy->shouldCreate($shopifyProduct);
             
-            // Dispatch event (Observer Pattern - decouples actions from business logic)
-            event(new ProductSynced($product, 'created', $shopifyProduct));
+            Log::info('Checking if product should be created', [
+                'shopify_id' => $shopifyId,
+                'should_create' => $shouldCreate,
+                'strategy' => get_class($this->syncStrategy),
+                'product_status' => $shopifyProduct['status'] ?? 'unknown',
+                'product_title' => $shopifyProduct['title'] ?? 'unknown',
+            ]);
             
-            return 'created';
+            if ($shouldCreate) {
+                try {
+                    $data = $this->syncStrategy->transformProductData($shopifyProduct);
+                    
+                    // Ensure synced_at is set
+                    if (!isset($data['synced_at'])) {
+                        $data['synced_at'] = now();
+                    }
+                    
+                    // Ensure sync_auto is set
+                    if (!isset($data['sync_auto'])) {
+                        $data['sync_auto'] = false;
+                    }
+                    
+                    $product = $this->productRepository->create($data);
+                    
+                    // Dispatch event (Observer Pattern - decouples actions from business logic)
+                    event(new ProductSynced($product, 'created', $shopifyProduct));
+                    
+                    Log::info('Product created from Shopify', [
+                        'shopify_id' => $shopifyId,
+                        'product_id' => $product->id,
+                        'title' => $product->title,
+                    ]);
+                    
+                    return 'created';
+                } catch (\Exception $e) {
+                    Log::error('Failed to create product from Shopify', [
+                        'shopify_id' => $shopifyId,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                        'data' => $data ?? null,
+                    ]);
+                    throw $e;
+                }
+            } else {
+                Log::warning('Product skipped: shouldCreate returned false', [
+                    'shopify_id' => $shopifyId,
+                    'strategy' => get_class($this->syncStrategy),
+                    'product_status' => $shopifyProduct['status'] ?? 'unknown',
+                    'product_title' => $shopifyProduct['title'] ?? 'unknown',
+                ]);
+                return 'skipped';
+            }
         }
 
-        if ($existingProduct && $this->syncStrategy->shouldUpdate($existingProduct, $shopifyProduct)) {
-            $data = $this->syncStrategy->transformProductData($shopifyProduct);
-            $product = $this->productRepository->update($existingProduct, $data);
-            
-            // Dispatch event (Observer Pattern)
-            event(new ProductSynced($product, 'updated', $shopifyProduct));
-            
-            return 'updated';
+        // If product exists, update it
+        if ($existingProduct) {
+            if ($this->syncStrategy->shouldUpdate($existingProduct, $shopifyProduct)) {
+                try {
+                    $data = $this->syncStrategy->transformProductData($shopifyProduct);
+                    
+                    // Ensure synced_at is updated
+                    $data['synced_at'] = now();
+                    
+                    $product = $this->productRepository->update($existingProduct, $data);
+                    
+                    // Dispatch event (Observer Pattern)
+                    event(new ProductSynced($product, 'updated', $shopifyProduct));
+                    
+                    Log::info('Product updated from Shopify', [
+                        'shopify_id' => $shopifyId,
+                        'product_id' => $product->id,
+                        'title' => $product->title,
+                    ]);
+                    
+                    return 'updated';
+                } catch (\Exception $e) {
+                    Log::error('Failed to update product from Shopify', [
+                        'shopify_id' => $shopifyId,
+                        'product_id' => $existingProduct->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    throw $e;
+                }
+            } else {
+                Log::warning('Product skipped: shouldUpdate returned false', [
+                    'shopify_id' => $shopifyId,
+                    'product_id' => $existingProduct->id,
+                ]);
+                return 'skipped';
+            }
         }
 
+        // This should never be reached, but just in case
+        Log::warning('Product skipped: unexpected condition', [
+            'shopify_id' => $shopifyId,
+            'existing_product' => $existingProduct ? $existingProduct->id : null,
+        ]);
         return 'skipped';
     }
 }

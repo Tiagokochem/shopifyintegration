@@ -66,12 +66,19 @@ class ProductRepository implements ProductRepositoryInterface
      * Find a product by ID (accepts string or int for GraphQL compatibility)
      *
      * @param string|int $id
-     * @return Product|null
+     * @return Product
+     * @throws \App\Exceptions\ProductNotFoundException
      */
-    public function findByIdOrFail(string|int $id): ?Product
+    public function findByIdOrFail(string|int $id): Product
     {
         $id = is_string($id) ? (int) $id : $id;
-        return $this->findById($id);
+        $product = $this->findById($id);
+        
+        if (!$product) {
+            throw new \App\Exceptions\ProductNotFoundException("Product with ID {$id} not found.");
+        }
+        
+        return $product;
     }
 
     public function delete(Product $product): bool

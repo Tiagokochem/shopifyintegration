@@ -227,6 +227,21 @@ const TOGGLE_SYNC_AUTO_MUTATION = gql`
   }
 `;
 
+const SYNC_PRODUCTS_FROM_SHOPIFY_MUTATION = gql`
+  mutation SyncProductsFromShopify($limit: Int) {
+    syncProductsFromShopify(limit: $limit) {
+      success
+      message
+      stats {
+        created
+        updated
+        skipped
+        errors
+      }
+    }
+  }
+`;
+
 export const useCreateProduct = () => {
   return useMutation(CREATE_PRODUCT_MUTATION);
 };
@@ -245,4 +260,23 @@ export const useSyncProductToShopify = () => {
 
 export const useToggleSyncAuto = () => {
   return useMutation(TOGGLE_SYNC_AUTO_MUTATION);
+};
+
+export interface SyncProductsFromShopifyResult {
+  syncProductsFromShopify: {
+    success: boolean;
+    message: string;
+    stats: {
+      created: number;
+      updated: number;
+      skipped: number;
+      errors: number;
+    };
+  };
+}
+
+export const useSyncProductsFromShopify = () => {
+  return useMutation<SyncProductsFromShopifyResult, { limit?: number }>(
+    SYNC_PRODUCTS_FROM_SHOPIFY_MUTATION
+  );
 };
