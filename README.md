@@ -158,6 +158,32 @@ This script automatically:
 - **GraphQL Endpoint**: http://localhost:8082/graphql
 - **Frontend**: http://localhost:3002
 
+### Useful Commands
+
+```bash
+# Sync products from Shopify
+docker compose exec php php artisan shopify:sync-products
+
+# Check products in database
+docker compose exec php php artisan products:check
+
+# Run migrations
+docker compose exec php php artisan migrate
+
+# Clear cache
+docker compose exec php php artisan config:clear
+docker compose exec php php artisan cache:clear
+
+# View logs
+docker compose logs php --tail 50
+
+# Access PHP container shell
+docker compose exec php bash
+
+# Access database
+docker compose exec postgres psql -U shopify_user -d shopify_integration
+```
+
 ## Usage
 
 ### Sync Products from Shopify
@@ -170,6 +196,7 @@ docker compose exec php php artisan shopify:sync-products
 
 Use the frontend interface at http://localhost:3002/products or GraphQL mutations:
 
+**Simple Example:**
 ```graphql
 mutation {
   createProduct(
@@ -184,8 +211,46 @@ mutation {
 }
 ```
 
+**Complete Example with All Fields:**
+```graphql
+mutation {
+  createProduct(
+    title: "Premium Product"
+    handle: "premium-product"
+    description: "High-quality product description"
+    price: 99.99
+    compare_at_price: 149.99
+    vendor: "Premium Brand"
+    product_type: "Electronics"
+    tags: "premium, electronics, featured"
+    status: "active"
+    sku: "PREMIUM-001"
+    weight: 1.5
+    weight_unit: "kg"
+    requires_shipping: true
+    tracked: true
+    inventory_quantity: 100
+    meta_title: "Premium Product - SEO Title"
+    meta_description: "SEO description for search engines"
+    template_suffix: "custom-template"
+    published: true
+    sync_auto: true
+  ) {
+    id
+    shopify_id
+    title
+    price
+    compare_at_price
+    vendor
+    sku
+    inventory_quantity
+  }
+}
+```
+
 ### GraphQL Queries
 
+**Simple Query:**
 ```graphql
 query {
   products(first: 10, search: "test") {
@@ -204,6 +269,49 @@ query {
 }
 ```
 
+**Complete Query with All Fields:**
+```graphql
+query {
+  products(first: 10, vendor: "Brand Name", product_type: "Electronics") {
+    data {
+      id
+      shopify_id
+      handle
+      title
+      description
+      price
+      compare_at_price
+      vendor
+      product_type
+      tags
+      status
+      sku
+      weight
+      weight_unit
+      requires_shipping
+      tracked
+      inventory_quantity
+      meta_title
+      meta_description
+      featured_image
+      template_suffix
+      published
+      published_at
+      sync_auto
+      synced_at
+      created_at
+      updated_at
+    }
+    paginatorInfo {
+      total
+      currentPage
+      lastPage
+      hasMorePages
+    }
+  }
+}
+```
+
 ## Features
 
 ### Product Management
@@ -213,16 +321,35 @@ query {
 - **Auto Sync**: Automatic synchronization when products are created/updated locally
 - **Manual Sync**: Manual sync button for each product
 - **Sync Status**: Track sync status and timestamps
+- **Complete Field Mapping**: All Shopify product fields are mapped and available:
+  - Basic: title, handle, description, vendor, product_type, tags, status
+  - Pricing: price, compare_at_price
+  - Inventory: sku, weight, weight_unit, requires_shipping, tracked, inventory_quantity
+  - SEO: meta_title, meta_description
+  - Media: images, featured_image
+  - Publishing: template_suffix, published, published_at
 
 ### GraphQL API
 
-- Query `products`: List products with filters and pagination
-- Query `product(id)`: Get specific product
-- Mutation `createProduct`: Create new product
-- Mutation `updateProduct`: Update existing product
-- Mutation `deleteProduct`: Delete product
-- Mutation `syncProductToShopify`: Manual sync to Shopify
-- Mutation `toggleProductSyncAuto`: Enable/disable auto sync
+**Queries:**
+- `products(first, page, search, vendor, product_type)`: List products with filters and pagination
+- `product(id)`: Get specific product with all fields
+
+**Mutations:**
+- `createProduct(...)`: Create new product with all Shopify fields
+- `updateProduct(id, ...)`: Update existing product (all fields optional)
+- `deleteProduct(id)`: Delete product (with optional Shopify deletion if sync_auto enabled)
+- `syncProductToShopify(id)`: Manual sync to Shopify
+- `toggleProductSyncAuto(id, sync_auto)`: Enable/disable auto sync
+
+**Available Fields for Products:**
+- Basic: `title`, `handle`, `description`, `vendor`, `product_type`, `tags`, `status`
+- Pricing: `price`, `compare_at_price`
+- Inventory: `sku`, `weight`, `weight_unit`, `requires_shipping`, `tracked`, `inventory_quantity`
+- SEO: `meta_title`, `meta_description`
+- Media: `featured_image`, `images` (JSON)
+- Publishing: `template_suffix`, `published`, `published_at`
+- Sync: `sync_auto`, `synced_at`
 
 ### Frontend
 
@@ -232,6 +359,13 @@ query {
 - Pagination
 - Auto sync toggle per product
 - Sync status indicators
+- **Complete Product Form**: Comprehensive form with all Shopify fields organized in sections:
+  - Basic Information (title, handle, description)
+  - Pricing (price, compare_at_price)
+  - Organization (vendor, product_type, tags)
+  - Inventory (SKU, weight, quantity, shipping options)
+  - SEO (meta title, meta description)
+  - Status & Publishing (status, template suffix, published)
 
 ## Testing
 
@@ -304,8 +438,11 @@ If ports are already in use, modify `docker-compose.yml`:
 3. **Clean Architecture**: Clear separation between domain, application, and infrastructure layers
 4. **Type Safety**: TypeScript on frontend, strict types in PHP
 5. **Error Handling**: Custom exceptions with proper error messages
-6. **Validation**: Input validation before processing
-7. **DRY**: Centralized formatting logic to avoid duplication
+6. **Validation**: Input validation before processing (ProductValidator)
+7. **DRY**: Centralized formatting logic (ShopifyProductFormatter) to avoid duplication
+8. **Complete Field Mapping**: All Shopify product fields mapped and synchronized bidirectionally
+9. **Event-Driven**: Laravel events for product lifecycle (created, updated, deleted, synced)
+10. **Repository Pattern**: Abstraction layer for data access
 
 ## License
 
