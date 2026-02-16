@@ -7,6 +7,7 @@ use App\Events\ProductDeleted;
 use App\Exceptions\ProductNotFoundException;
 use App\Models\Product;
 use App\Services\Product\ProductShopifySyncService;
+use Illuminate\Support\Facades\Log;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 
 /**
@@ -38,7 +39,7 @@ class DeleteProductMutation
             try {
                 $this->shopifySyncService->deleteFromShopify($product);
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Auto-sync delete failed', [
+                Log::error('Auto-sync delete failed', [
                     'product_id' => $product->id,
                     'error' => $e->getMessage(),
                 ]);

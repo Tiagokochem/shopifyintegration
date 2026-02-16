@@ -8,7 +8,8 @@ use App\Contracts\Shopify\ShopifyProductApiInterface;
 class ShopifyProductService implements ShopifyProductApiInterface
 {
     public function __construct(
-        private readonly ShopifyApiInterface $apiClient
+        private readonly ShopifyApiInterface $apiClient,
+        private readonly ShopifyProductFormatter $formatter
     ) {
     }
 
@@ -20,9 +21,6 @@ class ShopifyProductService implements ShopifyProductApiInterface
             $params['since_id'] = $sinceId;
         }
 
-        // Não usar status=any por padrão - pode causar problemas na API
-        // Primeiro tentar sem status (retorna apenas produtos ativos/publicados)
-        // Se precisar incluir drafts/archived, pode ser feito depois
         $response = $this->apiClient->get('/products.json', $params);
 
         return $response['products'] ?? [];
@@ -45,8 +43,6 @@ class ShopifyProductService implements ShopifyProductApiInterface
 
     public function getProductsCount(): int
     {
-        // Não usar status=any - pode causar problemas na API
-        // Buscar contagem sem filtro de status (retorna apenas produtos ativos/publicados)
         $response = $this->apiClient->get('/products/count.json', []);
 
         return $response['count'] ?? 0;
@@ -54,8 +50,7 @@ class ShopifyProductService implements ShopifyProductApiInterface
 
     public function createProduct(array $productData): array
     {
-        // Formatar dados para o formato esperado pela API do Shopify
-        $shopifyProduct = $this->formatProductForShopify($productData);
+        $shopifyProduct = $this->formatter->format($productData);
         
         $response = $this->apiClient->post('/products.json', [
             'product' => $shopifyProduct,
@@ -66,8 +61,7 @@ class ShopifyProductService implements ShopifyProductApiInterface
 
     public function updateProduct(string $shopifyId, array $productData): array
     {
-        // Formatar dados para o formato esperado pela API do Shopify
-        $shopifyProduct = $this->formatProductForShopify($productData);
+        $shopifyProduct = $this->formatter->format($productData);
         
         $response = $this->apiClient->put("/products/{$shopifyId}.json", [
             'product' => $shopifyProduct,
@@ -83,38 +77,10 @@ class ShopifyProductService implements ShopifyProductApiInterface
             return true;
         } catch (\RuntimeException $e) {
             if (str_contains($e->getMessage(), '404')) {
-                return false; // Produto já não existe
+                return false;
             }
             throw $e;
         }
     }
 
-    /**
-     * Format product data to Shopify API format
-     *
-     * @param array $productData
-     * @return array
-     */
-    private function formatProductForShopify(array $productData): array
-    {
-        $shopifyProduct = [
-            'title' => $productData['title'] ?? '',
-            'body_html' => $productData['description'] ?? '',
-            'vendor' => $productData['vendor'] ?? null,
-            'product_type' => $productData['product_type'] ?? null,
-            'status' => $productData['status'] ?? 'active',
-        ];
-
-        // Adicionar variante com preço
-        if (isset($productData['price'])) {
-            $shopifyProduct['variants'] = [
-                [
-                    'price' => (string) $productData['price'],
-                    'inventory_management' => 'shopify',
-                ],
-            ];
-        }
-
-        return $shopifyProduct;
-    }
 }

@@ -9,6 +9,7 @@ use App\Exceptions\ProductNotFoundException;
 use App\Models\Product;
 use App\Services\Product\ProductShopifySyncService;
 use App\Services\Product\ProductValidator;
+use Illuminate\Support\Facades\Log;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 
 /**
@@ -72,7 +73,7 @@ class UpdateProductMutation
             try {
                 $this->shopifySyncService->syncToShopify($product);
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Auto-sync failed on product update', [
+                Log::error('Auto-sync failed on product update', [
                     'product_id' => $product->id,
                     'error' => $e->getMessage(),
                 ]);

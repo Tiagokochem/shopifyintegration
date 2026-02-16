@@ -13,6 +13,7 @@ use App\Services\Product\ProductSyncStrategyFactory;
 use App\Services\Product\ProductTransformer;
 use App\Services\Shopify\ShopifyApiClient;
 use App\Services\Shopify\ShopifyProductService;
+use App\Services\Shopify\ShopifyProductFormatter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -27,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(ProductRepositoryInterface::class, ProductRepository::class);
         $this->app->singleton(ProductTransformerInterface::class, ProductTransformer::class);
         $this->app->singleton(ProductSyncStrategyFactory::class);
+        $this->app->singleton(ShopifyProductFormatter::class);
         
         // Bind strategy using factory (allows dynamic strategy selection)
         $this->app->bind(ProductSyncStrategyInterface::class, function ($app) {

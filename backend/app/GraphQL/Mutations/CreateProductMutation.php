@@ -8,6 +8,7 @@ use App\Exceptions\InvalidProductDataException;
 use App\Models\Product;
 use App\Services\Product\ProductShopifySyncService;
 use App\Services\Product\ProductValidator;
+use Illuminate\Support\Facades\Log;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 
 /**
@@ -50,8 +51,7 @@ class CreateProductMutation
             try {
                 $this->shopifySyncService->syncToShopify($product);
             } catch (\Exception $e) {
-                // Log error but don't fail the creation
-                \Illuminate\Support\Facades\Log::error('Auto-sync failed on product creation', [
+                Log::error('Auto-sync failed on product creation', [
                     'product_id' => $product->id,
                     'error' => $e->getMessage(),
                 ]);

@@ -5,6 +5,7 @@ namespace App\Services\Product;
 use App\Contracts\Product\ProductRepositoryInterface;
 use App\Contracts\Shopify\ShopifyProductApiInterface;
 use App\Models\Product;
+use App\Services\Shopify\ShopifyProductFormatter;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -20,7 +21,8 @@ class ProductShopifySyncService
 {
     public function __construct(
         private readonly ShopifyProductApiInterface $shopifyProductApi,
-        private readonly ProductRepositoryInterface $productRepository
+        private readonly ProductRepositoryInterface $productRepository,
+        private readonly ShopifyProductFormatter $formatter
     ) {
     }
 
@@ -33,7 +35,7 @@ class ProductShopifySyncService
     public function syncToShopify(Product $product): Product
     {
         try {
-            $productData = $this->formatProductForShopify($product);
+            $productData = $this->formatter->format($product);
 
             if ($product->shopify_id) {
                 // Update existing product in Shopify
@@ -94,23 +96,5 @@ class ProductShopifySyncService
 
             throw $e;
         }
-    }
-
-    /**
-     * Format product data for Shopify API
-     *
-     * @param Product $product
-     * @return array
-     */
-    private function formatProductForShopify(Product $product): array
-    {
-        return [
-            'title' => $product->title,
-            'description' => $product->description,
-            'price' => $product->price,
-            'vendor' => $product->vendor,
-            'product_type' => $product->product_type,
-            'status' => $product->status,
-        ];
     }
 }
