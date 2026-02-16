@@ -1,105 +1,120 @@
 <?php
 
+namespace Tests\Unit\Repositories;
+
 use App\Models\Product;
 use App\Repositories\ProductRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
-uses(RefreshDatabase::class);
+class ProductRepositoryTest extends TestCase
+{
+    use RefreshDatabase;
 
-beforeEach(function () {
-    $this->repository = new ProductRepository();
-});
+    protected ProductRepository $repository;
 
-test('it can create a product', function () {
-    $data = [
-        'shopify_id' => '123',
-        'title' => 'Test Product',
-        'description' => 'Test Description',
-        'price' => 10.00,
-        'vendor' => 'Test Vendor',
-        'product_type' => 'Test Type',
-        'status' => 'active',
-        'synced_at' => now(),
-    ];
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->repository = new ProductRepository();
+    }
 
-    $product = $this->repository->create($data);
+    public function test_it_can_create_a_product(): void
+    {
+        $data = [
+            'shopify_id' => '123',
+            'title' => 'Test Product',
+            'description' => 'Test Description',
+            'price' => 10.00,
+            'vendor' => 'Test Vendor',
+            'product_type' => 'Test Type',
+            'status' => 'active',
+            'synced_at' => now(),
+        ];
 
-    expect($product)->toBeInstanceOf(Product::class);
-    expect($product->shopify_id)->toBe('123');
-    expect($product->title)->toBe('Test Product');
-    expect($product->price)->toBe(10.00);
-});
+        $product = $this->repository->create($data);
 
-test('it can find a product by shopify id', function () {
-    $product = Product::factory()->create([
-        'shopify_id' => '456',
-        'title' => 'Existing Product',
-    ]);
+        $this->assertInstanceOf(Product::class, $product);
+        $this->assertEquals('123', $product->shopify_id);
+        $this->assertEquals('Test Product', $product->title);
+        $this->assertEquals(10.00, $product->price);
+    }
 
-    $found = $this->repository->findByShopifyId('456');
+    public function test_it_can_find_a_product_by_shopify_id(): void
+    {
+        $product = Product::factory()->create([
+            'shopify_id' => '456',
+            'title' => 'Existing Product',
+        ]);
 
-    expect($found)->not->toBeNull();
-    expect($found->id)->toBe($product->id);
-    expect($found->shopify_id)->toBe('456');
-});
+        $found = $this->repository->findByShopifyId('456');
 
-test('it returns null when product not found by shopify id', function () {
-    $found = $this->repository->findByShopifyId('999');
+        $this->assertNotNull($found);
+        $this->assertEquals($product->id, $found->id);
+        $this->assertEquals('456', $found->shopify_id);
+    }
 
-    expect($found)->toBeNull();
-});
+    public function test_it_returns_null_when_product_not_found_by_shopify_id(): void
+    {
+        $found = $this->repository->findByShopifyId('999');
 
-test('it can update a product', function () {
-    $product = Product::factory()->create([
-        'title' => 'Old Title',
-        'price' => 10.00,
-    ]);
+        $this->assertNull($found);
+    }
 
-    $updated = $this->repository->update($product, [
-        'title' => 'New Title',
-        'price' => 15.00,
-    ]);
+    public function test_it_can_update_a_product(): void
+    {
+        $product = Product::factory()->create([
+            'title' => 'Old Title',
+            'price' => 10.00,
+        ]);
 
-    expect($updated->title)->toBe('New Title');
-    expect($updated->price)->toBe(15.00);
-});
+        $updated = $this->repository->update($product, [
+            'title' => 'New Title',
+            'price' => 15.00,
+        ]);
 
-test('it can filter products by search', function () {
-    Product::factory()->create(['title' => 'Apple iPhone']);
-    Product::factory()->create(['title' => 'Samsung Galaxy']);
-    Product::factory()->create(['title' => 'Google Pixel']);
+        $this->assertEquals('New Title', $updated->title);
+        $this->assertEquals(15.00, $updated->price);
+    }
 
-    $results = $this->repository->getAll(['search' => 'Apple'], 10);
+    public function test_it_can_filter_products_by_search(): void
+    {
+        Product::factory()->create(['title' => 'Laptop Computer']);
+        Product::factory()->create(['title' => 'Desktop Computer']);
+        Product::factory()->create(['title' => 'Mouse']);
 
-    expect($results->count())->toBe(1);
-    expect($results->first()->title)->toContain('Apple');
-});
+        $results = $this->repository->getAll(['search' => 'Computer'], 10);
 
-test('it can filter products by vendor', function () {
-    Product::factory()->create(['vendor' => 'Apple']);
-    Product::factory()->create(['vendor' => 'Samsung']);
-    Product::factory()->create(['vendor' => 'Apple']);
+        $this->assertCount(2, $results);
+        $this->assertTrue($results->every(fn ($product) => str_contains($product->title, 'Computer')));
+    }
 
-    $results = $this->repository->getAll(['vendor' => 'Apple'], 10);
+    public function test_it_can_paginate_products(): void
+    {
+        Product::factory()->count(25)->create();
 
-    expect($results->count())->toBe(2);
-});
+        $paginated = $this->repository->getAll([], 10);
 
-test('it can filter products by product type', function () {
-    Product::factory()->create(['product_type' => 'Electronics']);
-    Product::factory()->create(['product_type' => 'Clothing']);
-    Product::factory()->create(['product_type' => 'Electronics']);
+        $this->assertCount(10, $paginated);
+        $this->assertEquals(25, $paginated->total());
+        $this->assertEquals(3, $paginated->lastPage());
+    }
 
-    $results = $this->repository->getAll(['product_type' => 'Electronics'], 10);
+    public function test_it_can_get_all_products(): void
+    {
+        Product::factory()->count(5)->create();
 
-    expect($results->count())->toBe(2);
-});
+        $products = $this->repository->getAll([], 10);
 
-test('it can paginate results', function () {
-    Product::factory()->count(25)->create();
+        $this->assertGreaterThanOrEqual(5, $products->count());
+    }
 
-    $results = $this->repository->getAll([], 10);
+    public function test_it_can_delete_a_product(): void
+    {
+        $product = Product::factory()->create();
 
-    expect($results->count())->toBe(10);
-    expect($results->total())->toBe(25);
-});
+        $this->repository->delete($product);
+
+        $this->assertDatabaseMissing('products', ['id' => $product->id]);
+    }
+}

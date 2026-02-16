@@ -16,7 +16,7 @@ This project implements a Shopify API integration for product synchronization, d
 - **Testability** through interfaces and dependency injection
 - **Modern Stack**: Laravel 11, PHP 8.2, Laravel Lighthouse, Nuxt.js 3, TypeScript
 - **Complete Docker Environment** fully functional
-- **Comprehensive Tests**: Pest (backend) and Playwright (E2E frontend)
+- **Comprehensive Tests**: PHPUnit (backend) and Playwright (E2E frontend)
 
 ## Architecture
 
@@ -369,10 +369,23 @@ query {
 
 ## Testing
 
-### Backend Tests (Pest)
+### Backend Tests (PHPUnit)
 
 ```bash
-docker compose exec php php artisan test
+# Executar todos os testes
+docker compose exec php sh -c "cd /var/www/html && php vendor/phpunit/phpunit/phpunit"
+
+# Executar apenas testes Unit
+docker compose exec php sh -c "cd /var/www/html && php vendor/phpunit/phpunit/phpunit --testsuite=Unit"
+
+# Executar apenas testes Feature
+docker compose exec php sh -c "cd /var/www/html && php vendor/phpunit/phpunit/phpunit --testsuite=Feature"
+
+# Executar um arquivo específico
+docker compose exec php sh -c "cd /var/www/html && php vendor/phpunit/phpunit/phpunit tests/Unit/Repositories/ProductRepositoryTest.php"
+
+# Executar um teste específico
+docker compose exec php sh -c "cd /var/www/html && php vendor/phpunit/phpunit/phpunit --filter test_it_can_create_a_product"
 ```
 
 ### Frontend E2E Tests (Playwright)
@@ -416,7 +429,7 @@ If ports are already in use, modify `docker-compose.yml`:
 - Laravel Lighthouse (GraphQL)
 - PostgreSQL
 - Redis
-- Pest (Testing)
+- PHPUnit (Testing)
 - Guzzle (HTTP Client)
 
 ### Frontend
