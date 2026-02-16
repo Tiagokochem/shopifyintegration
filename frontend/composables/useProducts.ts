@@ -4,12 +4,27 @@ import gql from 'graphql-tag';
 export interface Product {
   id: string;
   shopify_id?: string;
+  handle?: string;
   title: string;
   description?: string;
   price: number;
+  compare_at_price?: number;
   vendor?: string;
   product_type?: string;
+  tags?: string;
   status: string;
+  sku?: string;
+  weight?: number;
+  weight_unit?: string;
+  requires_shipping?: boolean;
+  tracked?: boolean;
+  inventory_quantity?: number;
+  meta_title?: string;
+  meta_description?: string;
+  featured_image?: string;
+  template_suffix?: string;
+  published?: boolean;
+  published_at?: string;
   sync_auto?: boolean;
   synced_at?: string;
   created_at: string;
@@ -60,12 +75,27 @@ const PRODUCTS_QUERY = gql`
       data {
         id
         shopify_id
+        handle
         title
         description
         price
+        compare_at_price
         vendor
         product_type
+        tags
         status
+        sku
+        weight
+        weight_unit
+        requires_shipping
+        tracked
+        inventory_quantity
+        meta_title
+        meta_description
+        featured_image
+        template_suffix
+        published
+        published_at
         sync_auto
         synced_at
         created_at

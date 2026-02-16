@@ -32,13 +32,27 @@ class CreateProductMutation
     {
         $data = [
             'title' => $args['title'],
+            'handle' => $args['handle'] ?? null,
             'description' => $args['description'] ?? null,
             'price' => (float) $args['price'],
+            'compare_at_price' => isset($args['compare_at_price']) ? (float) $args['compare_at_price'] : null,
             'vendor' => $args['vendor'] ?? null,
             'product_type' => $args['product_type'] ?? null,
+            'tags' => $args['tags'] ?? null,
             'status' => $args['status'] ?? 'active',
+            'sku' => $args['sku'] ?? null,
+            'weight' => isset($args['weight']) ? (float) $args['weight'] : null,
+            'weight_unit' => $args['weight_unit'] ?? 'kg',
+            'requires_shipping' => $args['requires_shipping'] ?? true,
+            'tracked' => $args['tracked'] ?? false,
+            'inventory_quantity' => isset($args['inventory_quantity']) ? (int) $args['inventory_quantity'] : null,
+            'meta_title' => $args['meta_title'] ?? null,
+            'meta_description' => $args['meta_description'] ?? null,
+            'template_suffix' => $args['template_suffix'] ?? null,
+            'published' => $args['published'] ?? true,
+            'published_at' => isset($args['published']) && $args['published'] ? now() : null,
             'sync_auto' => $args['sync_auto'] ?? false,
-            'shopify_id' => null, // Will be set if synced to Shopify
+            'shopify_id' => null,
         ];
 
         // Validate data before creating

@@ -37,6 +37,18 @@ class ProductValidator
             $errors['status'] = 'Status must be one of: active, draft, archived';
         }
 
+        if (isset($data['compare_at_price']) && is_numeric($data['compare_at_price']) && $data['compare_at_price'] < 0) {
+            $errors['compare_at_price'] = 'Compare at price must be greater than or equal to 0';
+        }
+
+        if (isset($data['weight']) && is_numeric($data['weight']) && $data['weight'] < 0) {
+            $errors['weight'] = 'Weight must be greater than or equal to 0';
+        }
+
+        if (isset($data['inventory_quantity']) && is_numeric($data['inventory_quantity']) && $data['inventory_quantity'] < 0) {
+            $errors['inventory_quantity'] = 'Inventory quantity must be greater than or equal to 0';
+        }
+
         if (!empty($errors)) {
             throw new InvalidProductDataException('Invalid product data', $errors);
         }
@@ -66,6 +78,18 @@ class ProductValidator
 
         if (isset($data['status']) && !in_array($data['status'], ['active', 'draft', 'archived'])) {
             $errors['status'] = 'Status must be one of: active, draft, archived';
+        }
+
+        if (isset($data['compare_at_price']) && is_numeric($data['compare_at_price']) && $data['compare_at_price'] < 0) {
+            $errors['compare_at_price'] = 'Compare at price must be greater than or equal to 0';
+        }
+
+        if (isset($data['weight']) && is_numeric($data['weight']) && $data['weight'] < 0) {
+            $errors['weight'] = 'Weight must be greater than or equal to 0';
+        }
+
+        if (isset($data['inventory_quantity']) && is_numeric($data['inventory_quantity']) && $data['inventory_quantity'] < 0) {
+            $errors['inventory_quantity'] = 'Inventory quantity must be greater than or equal to 0';
         }
 
         if (!empty($errors)) {

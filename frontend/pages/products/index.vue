@@ -279,7 +279,7 @@
         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
         @click.self="closeModal"
       >
-        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
           <!-- Modal Header -->
           <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
             <div class="flex items-center justify-between">
@@ -300,91 +300,295 @@
           <!-- Modal Body -->
           <div class="px-6 py-6 overflow-y-auto flex-1">
             <form @submit.prevent="saveProduct" class="space-y-6">
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                  Title <span class="text-red-500">*</span>
-                </label>
-                <input
-                  v-model="formData.title"
-                  type="text"
-                  required
-                  placeholder="Enter product title..."
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  v-model="formData.description"
-                  rows="4"
-                  placeholder="Enter product description..."
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
-                ></textarea>
-              </div>
-
-              <div class="grid grid-cols-2 gap-4">
+              <!-- Basic Information -->
+              <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-gray-900 border-b pb-2">Basic Information</h3>
+                
                 <div>
                   <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Price <span class="text-red-500">*</span>
+                    Title <span class="text-red-500">*</span>
                   </label>
-                  <div class="relative">
-                    <span class="absolute left-3 top-3 text-gray-500">$</span>
+                  <input
+                    v-model="formData.title"
+                    type="text"
+                    required
+                    placeholder="Enter product title..."
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Handle (URL Slug)
+                  </label>
+                  <input
+                    v-model="formData.handle"
+                    type="text"
+                    placeholder="product-url-slug (auto-generated if empty)"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  />
+                  <p class="text-xs text-gray-500 mt-1">Leave empty to auto-generate from title</p>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    v-model="formData.description"
+                    rows="4"
+                    placeholder="Enter product description..."
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
+                  ></textarea>
+                </div>
+              </div>
+
+              <!-- Pricing -->
+              <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-gray-900 border-b pb-2">Pricing</h3>
+                
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                      Price <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                      <span class="absolute left-3 top-3 text-gray-500">$</span>
+                      <input
+                        v-model.number="formData.price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        required
+                        placeholder="0.00"
+                        class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                      Compare at Price
+                    </label>
+                    <div class="relative">
+                      <span class="absolute left-3 top-3 text-gray-500">$</span>
+                      <input
+                        v-model.number="formData.compare_at_price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Organization -->
+              <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-gray-900 border-b pb-2">Organization</h3>
+                
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                      Vendor
+                    </label>
                     <input
-                      v-model.number="formData.price"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      required
-                      placeholder="0.00"
-                      class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      v-model="formData.vendor"
+                      type="text"
+                      placeholder="Enter vendor name..."
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                      Product Type
+                    </label>
+                    <input
+                      v-model="formData.product_type"
+                      type="text"
+                      placeholder="Enter product type..."
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     />
                   </div>
                 </div>
 
                 <div>
                   <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Status
+                    Tags (comma-separated)
                   </label>
-                  <select
-                    v-model="formData.status"
+                  <input
+                    v-model="formData.tags"
+                    type="text"
+                    placeholder="tag1, tag2, tag3"
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  >
-                    <option value="active">Active</option>
-                    <option value="draft">Draft</option>
-                    <option value="archived">Archived</option>
-                  </select>
+                  />
                 </div>
               </div>
 
-              <div class="grid grid-cols-2 gap-4">
+              <!-- Inventory -->
+              <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-gray-900 border-b pb-2">Inventory</h3>
+                
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                      SKU
+                    </label>
+                    <input
+                      v-model="formData.sku"
+                      type="text"
+                      placeholder="Enter SKU..."
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                      Inventory Quantity
+                    </label>
+                    <input
+                      v-model.number="formData.inventory_quantity"
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4">
+                  <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                      Weight
+                    </label>
+                    <input
+                      v-model.number="formData.weight"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                      Weight Unit
+                    </label>
+                    <select
+                      v-model="formData.weight_unit"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    >
+                      <option value="kg">kg</option>
+                      <option value="g">g</option>
+                      <option value="lb">lb</option>
+                      <option value="oz">oz</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="p-3 bg-gray-50 rounded-lg">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input
+                        v-model="formData.requires_shipping"
+                        type="checkbox"
+                        class="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span class="text-sm font-medium text-gray-700">Requires Shipping</span>
+                    </label>
+                  </div>
+
+                  <div class="p-3 bg-gray-50 rounded-lg">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input
+                        v-model="formData.tracked"
+                        type="checkbox"
+                        class="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span class="text-sm font-medium text-gray-700">Track Inventory</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SEO -->
+              <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-gray-900 border-b pb-2">SEO</h3>
+                
                 <div>
                   <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Vendor
+                    Meta Title
                   </label>
                   <input
-                    v-model="formData.vendor"
+                    v-model="formData.meta_title"
                     type="text"
-                    placeholder="Enter vendor name..."
+                    placeholder="SEO title..."
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
                 </div>
 
                 <div>
                   <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Product Type
+                    Meta Description
                   </label>
-                  <input
-                    v-model="formData.product_type"
-                    type="text"
-                    placeholder="Enter product type..."
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
+                  <textarea
+                    v-model="formData.meta_description"
+                    rows="3"
+                    placeholder="SEO description..."
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
+                  ></textarea>
                 </div>
               </div>
 
+              <!-- Status & Publishing -->
+              <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-gray-900 border-b pb-2">Status & Publishing</h3>
+                
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                      Status
+                    </label>
+                    <select
+                      v-model="formData.status"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    >
+                      <option value="active">Active</option>
+                      <option value="draft">Draft</option>
+                      <option value="archived">Archived</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                      Template Suffix
+                    </label>
+                    <input
+                      v-model="formData.template_suffix"
+                      type="text"
+                      placeholder="custom-template"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div class="p-3 bg-gray-50 rounded-lg">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                      v-model="formData.published"
+                      type="checkbox"
+                      class="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span class="text-sm font-medium text-gray-700">Published</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Sync Settings -->
               <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <label class="flex items-center gap-3 cursor-pointer">
                   <input
@@ -470,11 +674,24 @@ const syncingProducts = ref<string[]>([]);
 // Form data
 const formData = ref<CreateProductInput>({
   title: '',
+  handle: '',
   description: '',
   price: 0,
+  compare_at_price: undefined,
   vendor: '',
   product_type: '',
+  tags: '',
   status: 'active',
+  sku: '',
+  weight: undefined,
+  weight_unit: 'kg',
+  requires_shipping: true,
+  tracked: false,
+  inventory_quantity: undefined,
+  meta_title: '',
+  meta_description: '',
+  template_suffix: '',
+  published: true,
   sync_auto: false,
 });
 
@@ -489,11 +706,24 @@ const openCreateModal = () => {
   editingProduct.value = null;
   formData.value = {
     title: '',
+    handle: '',
     description: '',
     price: 0,
+    compare_at_price: undefined,
     vendor: '',
     product_type: '',
+    tags: '',
     status: 'active',
+    sku: '',
+    weight: undefined,
+    weight_unit: 'kg',
+    requires_shipping: true,
+    tracked: false,
+    inventory_quantity: undefined,
+    meta_title: '',
+    meta_description: '',
+    template_suffix: '',
+    published: true,
     sync_auto: false,
   };
   showModal.value = true;
@@ -503,11 +733,24 @@ const openEditModal = (product: Product) => {
   editingProduct.value = product;
   formData.value = {
     title: product.title,
+    handle: product.handle || '',
     description: product.description || '',
     price: product.price,
+    compare_at_price: product.compare_at_price ?? undefined,
     vendor: product.vendor || '',
     product_type: product.product_type || '',
+    tags: product.tags || '',
     status: product.status,
+    sku: product.sku || '',
+    weight: product.weight ?? undefined,
+    weight_unit: product.weight_unit || 'kg',
+    requires_shipping: product.requires_shipping ?? true,
+    tracked: product.tracked ?? false,
+    inventory_quantity: product.inventory_quantity ?? undefined,
+    meta_title: product.meta_title || '',
+    meta_description: product.meta_description || '',
+    template_suffix: product.template_suffix || '',
+    published: product.published ?? true,
     sync_auto: product.sync_auto || false,
   };
   showModal.value = true;
